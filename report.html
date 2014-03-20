@@ -1,0 +1,73 @@
+<html>
+<head>
+	<title>Custom report- Plus</title>
+	<link href="css/style.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="css/jquery-ui-custom.min.css">
+	<script type="text/javascript" src="libs/jquery.min.js"></script>
+    <script type="text/javascript" src="libs/jquery-ui.custom.min.js"></script>
+	<script type="text/javascript" src="shared.js"></script>
+	<script type="text/javascript" src="report.js"></script>
+</head>
+<body style="font-family: arial; font-size: 16px; background: #E8EBEE; ">
+	<div class="agile_toplevel_report_container">
+		<h2 align="center">Custom report - Plus</h2>
+		<div class="agile_report_filters">
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Week start</p><input maxlength="8" class="agile_report_filter_input_short" placeholder=" begins with..." type="text" id="weekStart" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Week end</p><input maxlength="8" class="agile_report_filter_input_short" placeholder="begins with..." type="text" id="weekEnd" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Month start</p><input maxlength="7" class="agile_report_filter_input_short" placeholder="begins with..." type="text" id="monthStart" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Month end</p><input maxlength="7" class="agile_report_filter_input_short" placeholder="begins with..." type="text" id="monthEnd" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">User</p><input maxlength="80" placeholder="contains..." type="text" id="user" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Board</p><input maxlength="80" placeholder="contains..." type="text" id="board" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Card</p><input maxlength="80" placeholder="contains..." type="text" id="card" /></div>
+			<div class="agile_report_filter"><p class="agile_report_filter_label">Comment</p><input maxlength="80" placeholder="contains..." type="text" id="comment" /></div>
+			<div class="agile_report_filter">
+				<p class="agile_report_filter_label">E.type</p>
+				<select id="eType">
+					<option value="all">ALL</option>
+					<option value="eincr">+E</option>
+					<option value="edecr">-E</option>
+					<option value="enew">NEW</option>
+				</select>
+			</div>
+			<div style="display:none" class="agile_report_filter"><p class="agile_report_filter_label">Board shortLink</p><input maxlength="40" placeholder="is..." type="text" id="idBoard" /></div>
+			<div style="display:none" class="agile_report_filter"><p class="agile_report_filter_label">Card shortLink</p><input maxlength="40" placeholder="is..." type="text" id="idCard" /></div>
+            <div class="agile_report_filter"><input style="vertical-align:middle;" type="checkbox" value="checked" id="checkNoCrop">No Crop </input> </div>
+
+            <button id="buttonFilter">Query</button>
+		</div>
+        <div id="tabs">
+            <ul>
+                <li ><a href="#tabs-1">Report</a></li>
+                <li><a href="#tabs-2">Spent By User</a></li>
+                <li><a href="#tabs-3">Spent By Board</a></li>
+            </ul>
+            <div id="tabs-1" class="agile_report_container" style="margin:0px;padding:5px"></div>
+            <div id="tabs-2" class="agile_scroller" style="margin:0px;padding:5px">
+                <div class="agile_format_container" style="margin-bottom: 3px; margin-top: 5px;">
+                    <span>under </span>
+                    <input class="agile_format_under" type="number" title="Leave blank to disable format."/>
+                    <input class="agile_colorpicker agile_colorpicker_colorUnder" type="color" title="Click to change color." value="#E8EBEE" />
+                    <span style="margin-left:15px;">over </span>
+                    <input class="agile_format_over" type="number" title="Leave blank to disable format." />
+                    <input class="agile_colorpicker agile_colorpicker_colorOver" type="color" title="Click to change color." value="#E8EBEE" />
+                    <img class="agile_drilldown_select" />
+                </div>
+                <div class="agile_report_container_byUser"></div>
+            </div>
+            <div id="tabs-3" class="agile_scroller" style="margin:0px;padding:5px">
+                <div class="agile_format_container" style="margin-bottom: 3px; margin-top: 5px;">
+                    <span>under </span>
+                    <input class="agile_format_under" type="number" title="Leave blank to disable format." />
+                    <input class="agile_colorpicker agile_colorpicker_colorUnder" type="color" title="Click to change color." value="#E8EBEE" />
+                    <span style="margin-left:15px;">over </span>
+                    <input class="agile_format_over" type="number" title="Leave blank to disable format." />
+                    <input class="agile_colorpicker agile_colorpicker_colorOver" type="color" title="Click to change color." value="#E8EBEE" />
+                    <img class="agile_drilldown_select" />
+                </div>
+                <div class="agile_report_container_byBoard"></div>
+            </div>
+
+        </div>
+        </div>
+</body>
+</html>	

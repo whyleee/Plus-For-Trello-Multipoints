@@ -1,0 +1,29 @@
+{
+   "background": {
+      "page": "background.html"
+   },
+   "content_scripts": [ {
+      "css": [ "css/style.css", "css/colors.css" ],
+      "js": [ "libs/jquery.min.js", "libs/jsapi.js", "libs/formatchart.js", "app.js", "card.js", "labels.js", "language.js", "help.js", "buttons.js", "plus.js", "plusconfig.js", "board.js", "shared.js" ],
+      "matches": [ "https://trello.com/*" ]
+   } ],
+   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+   "description": "Track Spent/Estimate by card/list/board/user/team with historical reports and charts.",
+   "icons": {
+      "128": "images/icon128.png",
+      "16": "images/icon16.png",
+      "48": "images/icon48.png"
+   },
+   "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCNE9wstzpWi2eG4KXtpgIIhqimctjlE33gqScjqJzq+XEiE3iGs1bjYHc5vlvpEozXls++j+1Aq6Yhv4qLfHczyHtb7V9gRmtPF2bGCpDyMkq/zJunb3eoBrLeJoixyLolFuzOxXKdVdkS5IBDrwXrEuvlr8+DdtYXoIOfE5PO/wIDAQAB",
+   "manifest_version": 2,
+   "name": "Plus for Trello",
+   "oauth2": {
+      "client_id": "147493868263-rau69q6puvkskc83li1neonnbo0aelp9.apps.googleusercontent.com",
+      "scopes": [ "https://spreadsheets.google.com/feeds", "https://docs.google.com/feeds" ]
+   },
+   "permissions": [ "clipboardWrite", "identity", "storage", "unlimitedStorage", "notifications", "https://trello.com/", "https://spreadsheets.google.com/", "https://docs.google.com/", "https://script.google.com/", "https://script.googleusercontent.com/", "https://www.googleapis.com/" ],
+   "short_name": "Plus for Trello",
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "2.6.5",
+   "web_accessible_resources": [ "images/s1.png", "images/s2.png", "images/s3.png", "images/s4.png", "images/chromenu.png", "images/icon16.png", "images/icon48.png", "images/recurring.png", "images/iconspent.png", "images/new.png", "images/newgray.png", "images/wait.gif", "images/close.png", "images/copy.png", "burndown.html", "dashboard.html", "report.html", "plusmessages.html", "manifest.json" ]
+}
