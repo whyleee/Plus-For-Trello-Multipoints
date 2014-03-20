@@ -655,15 +655,29 @@ function doEnterSEIntoCard(s, e, commentBox, comment, idBoard, idCard, strDays, 
 		//elem.click();
 		var editTitleElem = elemParent.find("textarea");
 
+		var userCur = getCurrentTrelloUser();
+		var userGroup = getUserGroup(userCur);
 
-		var estimation = parseFixedFloat(e + se.estimate);
-		var spent = parseFixedFloat(s + se.spent);
-		var valNew = null;
+		var estimation = parseFixedFloat(e + se[userGroup + 'estimate']);
+		var spent = parseFixedFloat(s + se[userGroup + 'spent']);
+		var valNew = se.titleNew;
 
-		if (se.bSFTFormat)
-			valNew = "(" + estimation + ") " + cleanTitle + " [" + spent + "]";
-		else
-			valNew = "(" + spent + "/" + estimation + ") " + cleanTitle;
+		for (var prop in se) {
+			var group = prop.replace('estimate', '');
+			if (group != prop) {
+				if (group == userGroup) {
+					valNew = valNew.replace('@' + group + '@', spent + '/' + estimation);
+				} else {
+					var groupText = '';
+					if (se[group + 'spent'] > 0) {
+						groupText += se[group + 'spent'] + '/';
+					}
+					groupText += se[group + 'estimate'];
+					valNew = valNew.replace('@' + group + '@', groupText);
+				}
+			}
+		}
+
 		editTitleElem.val(valNew);
 		elem.click();
 		setTimeout(function () {
@@ -690,6 +704,18 @@ function handleEnterCardCommentAndClick(comment) {
 	}, 0);
 }
 
+function getUserGroup(username) {
+	var card = $.grep($('.list:first .list-card'), function(card) {
+		var member = $(card).find('.member-avatar').eq(0).attr('alt');
+		return member ? member.indexOf(username) != -1 : false;
+	})[0];
+	var badge = $.grep($(card).find('.badge-scrum'), function(badge) {
+		return $(badge).attr('class').indexOf('custom-badge') == -1 && $(badge).text() != '';
+	})[0];
+	var parsed = $(badge).attr('class').match(/badge-points(-[a-z]+)? /);
+	return parsed ? parsed[1].slice(1) : '';
+}
+
 
 /* parseSE
 *
@@ -702,29 +728,8 @@ function handleEnterCardCommentAndClick(comment) {
 */
 function parseSE(title, bKeepHashTags) {
 	var se = { bParsed: false, bSFTFormat: false };
+	se = parseSE_SFT(title);
 
-	if (g_bAcceptSFT)
-		se = parseSE_SFT(title);
-
-	if (se.bParsed) {
-		se.bSFTFormat = true;
-	} else {
-		var patt = new RegExp("^([(]\\s*([+-]?[0-9]*[.]?[0-9]*)\\s*/\\s*([+-]?[0-9]*[.]?[0-9]*)\\s*[)])?\\s*(.+)$");
-		var rgResults = patt.exec(title);
-
-		//review zig: when is rgResults null? one user had this but never sent the offending card title
-		if (rgResults == null || rgResults[2] === undefined || rgResults[3] === undefined) {
-			se.spent = 0;
-			se.estimate = 0;
-			se.titleNoSE = title.trim();
-			if (g_bAcceptSFT)
-				se.bSFTFormat = true;
-		} else {
-			se.titleNoSE = rgResults[4].trim();
-			se.spent = parseFixedFloat(rgResults[2]);
-			se.estimate = parseFixedFloat(rgResults[3]);
-		}
-	}
 	// Strip hashtags
 	if (bKeepHashTags === undefined || bKeepHashTags == false)
 		se.titleNoSE = se.titleNoSE.replace(/#[\w-]+/, "");
@@ -743,40 +748,38 @@ function parseSE_SFT(title) {
 			start = "[" + leftDelim + "]";
 			end = "[" + rightDelim + "]";
 		}
-		return start + "(\\s*[+-]?[0-9]*[.]?[0-9]*\\s*)" + end;
+		var num = '[+-]?[0-9]*[.]?[0-9]*';
+		return start + "\\s*(" + num + ")\\s*(/\\s*(" + num + ")\\s*)?" + end;
 	}
 
-	var se = { bParsed: false };
-	var leftDelim = "(";
-	var rightDelim = ")";
-	var part = makePatt(leftDelim, rightDelim);
-	var patt = new RegExp("^.*?" + makePatt(leftDelim, rightDelim) + ".*$"); //*? means non-greedy match so find first
-	var rgResults = patt.exec(title);
+	function parsePoints(leftDelim, rightDelim, group) {
+		var part = makePatt(leftDelim, rightDelim);
+		var patt = new RegExp(makePatt(leftDelim, rightDelim));
+		var rgResults = patt.exec(title);
 
-	if (rgResults == null || rgResults[1] === undefined)
-		se.estimate = 0;
-	else {
-		se.estimate = parseFixedFloat(rgResults[1], true);
-		if (!isNaN(se.estimate)) {
-			title = title.replace(leftDelim + rgResults[1] + rightDelim, "").trim();
-			se.titleNoSE = title;
-			se.bParsed = true;
-		}
+		if (rgResults == null || (rgResults[1] === undefined && rgResults[3] === undefined))
+			return;
+
+		se[group + 'spent'] = parseFixedFloat(rgResults[1]);
+		se[group + 'estimate'] = parseFixedFloat(rgResults[3]);
+
+		se.titleNoSE = se.titleNoSE.replace(rgResults[0], '').trim();
+		se.titleNew = se.titleNew.replace(rgResults[0], leftDelim + '@' + group + '@' + rightDelim);
 	}
 
-	leftDelim = "[";
-	rightDelim = "]";
-	patt = new RegExp("^.*" + makePatt(leftDelim, rightDelim) + ".*$"); //normal (greedy) match so it finds last
-	rgResults = patt.exec(title);
-	if (rgResults == null || rgResults[1] === undefined)
-		se.spent = 0;
-	else {
-		se.spent = parseFixedFloat(rgResults[1], true);
-		if (!isNaN(se.spent)) {
-			se.titleNoSE = title.replace(leftDelim + rgResults[1] + rightDelim, "").trim();
-			se.bParsed = true;
-		}
-	}
+	var se = {
+		estimate: 0,
+		spent: 0,
+		titleNoSE: title.trim(),
+		titleNew: title.trim()
+	};
+
+	parsePoints('(', ')', ''); /* orig: estimate */
+	//parsePoints('[', ']', 'spent');
+	parsePoints('{', '}', 'green');
+	parsePoints('<', '>', 'red');
+	parsePoints('*', '*', 'yellow');
+
 	return se;
 }
 

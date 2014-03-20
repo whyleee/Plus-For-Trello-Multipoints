@@ -8,6 +8,11 @@
 	padding: 1px 4px 1px 4px;
 	text-align: center;
 	width: auto;
+	display: none;
+}
+
+.list-header br {
+	display: none;
 }
 
 div.agile_estimation_box {
@@ -46,6 +51,7 @@ label.agile_ignore_filters_option {
 .agile_badge {
 	color: black !important;
 	padding-left: 4px !important;
+	display: none;
 }
 
 div.agile_badge_estimate {
