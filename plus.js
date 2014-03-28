@@ -98,8 +98,9 @@ function getCurrentTrelloUser() {
 	if (avatarElem === undefined)
 		return null;
 	var userElem = avatarElem.title;
-	userElem = userElem.split("(")[1];
-	userElem = userElem.split(")")[0];
+	userElem = userElem.slice(0, userElem.indexOf('(')).trim();
+	// userElem = userElem.split("(")[1];
+	// userElem = userElem.split(")")[0];
 	g_userTrelloCurrent = userElem;
 
 	//save the user, we need to know it from pages like dashboard
