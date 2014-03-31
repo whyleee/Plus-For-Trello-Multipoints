@@ -6,6 +6,8 @@ var g_colorDefaultUnder="#FFD5BD";
 var KEY_FORMAT_PIVOT_USER = "formatPivotUser";
 var KEY_FORMAT_PIVOT_BOARD = "formatPivotBoard";
 var g_cSyncSleep = 0;  //for controlling sync abuse
+var g_bIgnoreEnter = false; //review zig
+var g_rgTabScrollData = [];
 
 //cache formats to avoid overloading sync. "format" is saved to sync so short names there to reduce sync usage
 var g_dataFormatUser = { key:KEY_FORMAT_PIVOT_USER, interval: null, cLastWrite:0, cCur: 0, format: { u: { c: g_colorDefaultUnder, v: null }, o: { c: g_colorDefaultOver, v: null } }};
@@ -31,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			g_iTabCur = ui.newTab.index();
 			var params = getUrlParams();
 			params["tab"] = g_iTabCur;
+			var resizeInfo = g_rgTabScrollData[g_iTabCur];
+			if (resizeInfo)
+				setScrollerHeight(resizeInfo.scroller, resizeInfo.elemTop, resizeInfo.dyTop);
 			updateUrlState("report.html", params);
 		}
 	});
@@ -161,7 +166,7 @@ function invertColor(hexTripletColor) {
 	return color;
 }
 
-function getParamAndPutInFilter(params, name, valDefault) {
+function getParamAndPutInFilter(elem, params, name, valDefault) {
 	var value = params[name];
 	var str = "";
 	var bShowHide = (valDefault == "showhide");
@@ -169,7 +174,6 @@ function getParamAndPutInFilter(params, name, valDefault) {
 		str = valDefault;
 	if (value && value != "")
 		str = decodeURIComponent(value);
-	var elem = $("#" + name);
 	if (name.indexOf("check") == 0)
 		elem[0].checked = (str=="true");
 	else
@@ -189,36 +193,92 @@ function getParamAndPutInFilter(params, name, valDefault) {
 function loadReport() {
 	var params = getUrlParams();
 	g_iTabCur = params["tab"] || 0;
-
+	g_bPopupMode = (params["popup"] == "1");
+	if (g_bPopupMode) {
+		$("#title_header").hide();
+		$("body").width(620);
+		$("body").css("max-height", 600); //.height(600);
+		var dockOut = $("#dockoutImg");
+		dockOut.attr("src", chrome.extension.getURL("images/dockout.png"));
+		dockOut.show();
+		dockOut.css("cursor", "pointer");
+		dockOut.click(function () { //cant use setPopupClickHandler because url could have changed if user navigated inside 
+			var urlDockout = buildUrlFromParams("report.html", getUrlParams(), true);
+			chrome.tabs.create({ url: urlDockout });
+			return false;
+		});
+	}
+	$("#divMain").show();
 	$("#tabs").tabs("option", "active", g_iTabCur);
-	var date = new Date();
-	var weeks = 8;
-	date.setDate(date.getDate() - date.getDay() - 7 * weeks);
+	
 	var weekStartDefault = "";
-	if (params.weekStartRecent=="true")
+	if (params.weekStartRecent == "true") {
+		var date = new Date();
+		var weeks = 5;
+		date.setDate(date.getDate() - date.getDay() - 7 * weeks);
 		weekStartDefault = getCurrentWeekNum(date);
-	var elems = { weekStart: weekStartDefault, weekEnd: "", monthStart: "", monthEnd: "", user: "", board: "", card: "", comment: "", eType: "all", idBoard: "showhide", idCard: "showhide", checkNoCrop: "false" };
-	for (var iobj in elems)
-		getParamAndPutInFilter(params, iobj, elems[iobj]);
+	}
+	var elems = { groupBy: "", orderBy: "date", weekStart: weekStartDefault, weekEnd: "", monthStart: "", monthEnd: "", user: "", board: "", card: "", comment: "", eType: "all", idBoard: "showhide", idCard: "showhide", checkNoCrop: "false" };
+	for (var iobj in elems) {
+		var elemCur = $("#" + iobj);
+		elemCur.keypress(function (event) {
+			if (g_bIgnoreEnter)
+				return;
+			var keycode = (event.keyCode ? event.keyCode : event.which);
+			if (keycode == '13') {
+				onQuery();
+			}
+		});
+		getParamAndPutInFilter(elemCur, params, iobj, elems[iobj]);
+	}
 
 	var btn = $("#buttonFilter");
-	btn.click(function () {
-		//setBusy(true);
+
+	function onQuery() {
+		if (false) { //review zig: figure out how to make this work.
+			var iForms = 0;
+			var forms = $("form");
+			function handleFormsSubmit(iform, forms) {
+				setTimeout(function () {
+					document.forms[forms[iform].name].submit();
+					if (iform + 1 < forms.length)
+						handleFormsSubmit(iform + 1, forms);
+				}, 100);
+			}
+
+			handleFormsSubmit(0, forms);
+		}
 		setBusy(true, btn);
 		btn.attr('disabled', 'disabled');
 		for (var iobj in elems) {
-			if (iobj.indexOf("check")==0)
-				elems[iobj] = ($("#" + iobj)[0].checked?"true" : "false"); //keep it a string so its similar to the other properties
+			if (iobj.indexOf("check") == 0)
+				elems[iobj] = ($("#" + iobj)[0].checked ? "true" : "false"); //keep it a string so its similar to the other properties
 			else
 				elems[iobj] = $("#" + iobj).val();
 		}
-		if (g_iTabCur!=0)
+		if (g_iTabCur != 0)
 			elems["tab"] = g_iTabCur;
-		configReport(elems);
+		//these set of timeouts could be done all together but the GUI wont update instantly.
+		//handles this case: 1) make a huge report, 2) view by User, 3) change the filter and click Query again.
+		//without this, the pivot view would take a long time to clear because its waiting for the report to clear (which can take a few seconds with 10,000 rows).
+		setTimeout(function () {
+			$(".agile_report_container_byUser").html("...");
+			$(".agile_report_container_byBoard").html("...");
+			setTimeout(function () {
+				$(".agile_topLevelTooltipContainer").html("...");
+				setTimeout(function () {
+					configReport(elems);
+				}, 1);
+			}, 1);
+		}, 1);
+	}
+
+	btn.click(function () {
+		onQuery();
 	});
 
 	if (Object.keys(params).length > 0) //prevent executing query automatically when no parameters
-		btn.click();
+		setTimeout(function () { btn.click(); }, 10);
 }
 
 
@@ -261,9 +321,27 @@ function buildSqlParam(param, params, sqlField, operator, state, completerPatter
 	return sql;
 }
 
-function buildSql(elems) {
+function buildSql(elems, groupBy) {
 	var sql = "select H.user, H.week, H.month, H.spent, H.est, H.date, H.comment, H.idCard as idCardH, H.idBoard as idBoardH, C.name as nameCard, B.name as nameBoard, H.eType FROM HISTORY as H JOIN CARDS as C on H.idCard=C.idCard JOIN BOARDS B on H.idBoard=B.idBoard";
-	var post = " order by H.date DESC";
+	var post1 = "";
+	var post2 = " order by H.date DESC";
+
+	if (groupBy == "idBoardH" || groupBy == "idBoardH-user" || groupBy == "user") {
+		//if using these groupings, we can optimize and have SQL do a few sums for us. Can reduce the returned rows by a factor or 5 or so.
+		//first, some search fields must be empty.
+		var rgCheck = ["monthStart", "monthEnd", "card", "comment", "eType", "idCard"];
+		var iCheck = 0;
+		for (; iCheck < rgCheck.length; iCheck++) {
+			if (elems[rgCheck[iCheck]].length > 0)
+				break;
+		}
+		//if all checked fields are empty, change the query to use group by.
+		if (iCheck == rgCheck.length) {
+			sql = "select H.user, H.week, 0 as month, SUM(H.spent) as spent, SUM(H.est) as est, MAX(H.date) as date, '' as comment, 0 as idCardH, H.idBoard as idBoardH, '' as nameCard, B.name as nameBoard, '' as eType FROM HISTORY as H JOIN BOARDS B on H.idBoard=B.idBoard";
+			post1 = " group by B.idBoard, H.user, H.week";
+		}
+	}
+
 	var state = { cFilters: 0, values: [] };
 
 	sql += buildSqlParam("weekStart", elems, "week", ">=", state);
@@ -277,7 +355,8 @@ function buildSql(elems) {
 	sql += buildSqlParam("eType", elems, "eType", "=", state);
 	sql += buildSqlParam("idBoard", elems, "idBoardH", "=", state);
 	sql += buildSqlParam("idCard", elems, "idCardH", "=", state);
-	sql += post;
+	sql += post1;
+	sql += post2;
 	return { sql: sql, values: state.values };
 }
 
@@ -294,18 +373,20 @@ function configReport(elemsParam) {
 	if (elems["eType"] != "")
 		elems["eType"] = g_mapETypeParam[elems["eType"]];
 	setBusy(true);
+	var groupBy = elems["groupBy"] || "";
+
 	sendExtensionMessage({ method: "openDB" },
 			function (response) {
 				if (response.status != "OK") {
 					showError(response.status);
 					return;
 				}
-				var sqlQuery = buildSql(elems);
+				var sqlQuery = buildSql(elems, groupBy);
 				getSQLReport(sqlQuery.sql, sqlQuery.values,
 					function (response) {
 						var rows = response.rows;
 						try {
-							setReportData(rows, elems["checkNoCrop"] == "true", elemsParam);
+							setReportData(rows, elems["checkNoCrop"] == "true", elems);
 						}
 						catch (e) {
 							var strError = "Error: " + e.message;
@@ -315,25 +396,31 @@ function configReport(elemsParam) {
 			});
 }
 
-function setReportData(rows, bNoTruncate, urlParams) {
-	var html = getHtmlDrillDownTooltip(rows, bNoTruncate);
-	var container = makeReportContainer(html, 1300, true, $(".agile_report_container"));
+function setReportData(rowsOrig, bNoTruncate, urlParams) {
+	var rowsGrouped = rowsOrig;
+
+	var groupBy = urlParams["groupBy"];
+	var orderBy = urlParams["orderBy"];
+	if (groupBy.length > 0 || (orderBy.length > 0 && orderBy!="date"))
+		rowsGrouped=groupRows(rowsOrig, groupBy, orderBy);
+	var html = getHtmlDrillDownTooltip(rowsGrouped, bNoTruncate, groupBy, orderBy, urlParams["eType"]);
+	var parentScroller = $(".agile_report_container");
+	var container = makeReportContainer(html, 1300, true, parentScroller);
+	g_rgTabScrollData[0] = { scroller: parentScroller.find(".agile_tooltip_scroller"), elemTop: parentScroller, dyTop: 50 }; //review zig: fix this mess
 	setBusy(false);
 	var btn = $("#buttonFilter");
 	setBusy(false, btn);
 	btn.removeAttr('disabled');
-	fillPivotTables(rows, $(".agile_report_container_byUser"), $(".agile_report_container_byBoard"), urlParams);
+	fillPivotTables(rowsOrig, $(".agile_report_container_byUser"), $(".agile_report_container_byBoard"), urlParams);
 }
 
 function fillPivotTables(rows, elemByUser, elemByBoard, urlParams) {
 	var tables = calculateTables(rows);
 	//{ header: header, tips: tips, byUser: rgUserRows, byBoard: rgBoardRows };
-	elemByUser.empty();
-	elemByBoard.empty();
 	var parent = elemByUser.parent();
 	var dyTop = 70;
-	setScrollerHeight(elemByUser, parent, dyTop);
-	setScrollerHeight(elemByBoard, parent, dyTop);
+	g_rgTabScrollData[1] = { scroller: elemByUser, elemTop: parent, dyTop: dyTop };
+	g_rgTabScrollData[2] = { scroller: elemByBoard, elemTop: parent, dyTop: dyTop };
 	var strTh = "<th class='agile_header_pivot agile_pivotCell'>";
 	var strTd = '<td class="agile_nowrap agile_pivotCell">';
 	var strTable = "<table class='agile_table_pivot' cellpadding=2 cellspacing=0>";
@@ -354,11 +441,12 @@ function fillPivotTables(rows, elemByUser, elemByBoard, urlParams) {
 		}
 		params["tab"] = 0;
 		var url = buildUrlFromParams("report.html", params);
+		var urlCtrl = buildUrlFromParams("report.html", params, true);
 		tdElem.css("cursor", "-webkit-zoom-in");
 		tdElem.addClass("agile_hoverZoom");
 		tdElem.click(function (e) {
 			if (e.ctrlKey)
-				window.open(url, '_blank');
+				window.open(urlCtrl, '_blank');
 			else
 				window.location.href = url;
 		});
@@ -427,6 +515,8 @@ function fillPivotTables(rows, elemByUser, elemByBoard, urlParams) {
 		elemTableBoard.append(trBoard);
 	}
 
+	elemByUser.empty();
+	elemByBoard.empty();
 	elemByUser.append(elemTableUser);
 	elemByBoard.append(elemTableBoard);
 	configAllPivotFormats();
@@ -504,28 +594,145 @@ function calculateTables(rows) {
 }
 
 
-function getHtmlDrillDownTooltip(rows, bNoTruncate) {
-	var header = [{ name: "Date" }, { name: "Week" }, { name: "Month" }, { name: "User" }, { name: "Board" }, { name: "Card" }, { name: "S" }, { name: "E" }, { name: "Comment", bExtend: true }, { name: COLUMNNAME_ETYPE }];
+function groupRows(rowsOrig, propertyGroup, propertySort) {
+
+	var ret = [];
+	if (propertyGroup.length > 0) {
+		var i = 0;
+		var map = {};
+		var cMax = rowsOrig.length;
+		var pGroups = propertyGroup.split("-");
+		for (; i < cMax; i++) {
+			var row = rowsOrig[i];
+			var key = "";
+			var iProp = 0;
+			for (; iProp < pGroups.length; iProp++)
+				key = key + "/" + row[pGroups[iProp]];
+			var group = map[key];
+			if (group === undefined)
+				group = cloneObject(row);
+			else {
+				group.spent += row.spent;
+				group.est += row.est;
+			}
+			map[key] = group;
+		}
+
+
+		for (i in map) {
+			ret.push(map[i]);
+		}
+	} else {
+		ret = cloneObject(rowsOrig);
+	}
+
+	if (ret.length > 0 && propertySort.length > 0 && propertySort != "date") {
+		var bString = typeof(ret[0][propertySort])=="string";
+		var bRemain = (propertySort=="remain");
+		ret.sort(function doSort(a, b) {
+			if (bString)
+				return (a[propertySort].localeCompare(b[propertySort]));
+			var va = null;
+			var vb = null;
+
+			if (bRemain) {
+				va = a.est - a.spent;
+				vb = b.est - b.spent;
+			} else {
+				va = a[propertySort];
+				vb = b[propertySort];
+			}
+			return (vb - va);
+		});
+		if (bRemain && propertyGroup.length>0) {
+			//chop off all zero remains
+			
+		}
+	}
+	return ret;
+}
+
+function getHtmlDrillDownTooltip(rows, bNoTruncate, groupBy, orderBy, eType) {
+	var bOrderR = (orderBy == "remain");
+	var header = [{ name: "Date" }, { name: "Week" }, { name: "Month" }];
+	var bShowUser=(groupBy=="" || groupBy.indexOf("user")>=0);
+	if (bShowUser)
+		header.push({ name: "User" });
+	
+	var bShowBoard=(groupBy=="" || groupBy.indexOf("idBoardH")>=0 || groupBy.indexOf("idCardH")>=0);
+	if (bShowBoard)
+		header.push({ name: "Board" });
+
+	var bShowCard=(groupBy=="" || groupBy.indexOf("idCardH")>=0);
+	if (bShowCard)
+		header.push({ name: "Card" });
+	
+	header.push({ name: "S" });
+	header.push({ name: "E" });
+
+	bShowRemain = (bOrderR || groupBy != "");
+	if (bShowRemain)
+		header.push({ name: "R" });
+
+	var bShowComment = (groupBy == "");
+	if (bShowComment)
+		header.push({ name: "Comment", bExtend: true });
+	
+	var bShowEtype= (eType!="");
+
+	if (bShowEtype)
+		header.push({ name: COLUMNNAME_ETYPE });
+	
 	function callbackRowData(row) {
 		var rgRet = [];
 		var date = new Date(row.date * 1000); //db is in seconds
 		rgRet.push({ name: date.toDateString(), bNoTruncate: true });
 		rgRet.push({ name: row.week, bNoTruncate: true });
 		rgRet.push({ name: row.month, bNoTruncate: true });
-		rgRet.push({ name: row.user, bNoTruncate: bNoTruncate });
-		rgRet.push({ name: row.nameBoard, bNoTruncate: bNoTruncate });
-		var urlCard = null;
-		if (row.idCardH.indexOf("https://") == 0)
-			urlCard = row.idCardH; //old-style card URLs. Could be on old historical data from a previous Spent version
-		else
-			urlCard = "https://trello.com/c/" + row.idCardH;
-		rgRet.push({ name: "<A target='_blank' href='" + urlCard + "'>" + strTruncate(row.nameCard) + "</A>", bNoTruncate: true });
+		if (bShowUser)
+			rgRet.push({ name: row.user, bNoTruncate: bNoTruncate });
+
+		if (bShowBoard) {
+			var urlBoard = "https://trello.com/b/" + row.idBoardH;
+			rgRet.push({ name: "<A title='Go to Trello board' target='_blank' href='" + urlBoard + "'>" + strTruncate(row.nameBoard) + "</A>", bNoTruncate: true });
+		}
+
+		if (bShowCard) {
+			var urlCard = null;
+			if (row.idCardH.indexOf("https://") == 0)
+				urlCard = row.idCardH; //old-style card URLs. Could be on old historical data from a previous Spent version
+			else
+				urlCard = "https://trello.com/c/" + row.idCardH;
+
+			rgRet.push({ name: "<A title='Go to Trello card' target='_blank' href='" + urlCard + "'>" + strTruncate(row.nameCard) + "</A>", bNoTruncate: true });
+		}
+
 		rgRet.push({ name: parseFixedFloat(row.spent), bNoTruncate: true });
 		rgRet.push({ name: parseFixedFloat(row.est), bNoTruncate: true });
-		rgRet.push({ name: row.comment, bNoTruncate: bNoTruncate });
-		rgRet.push({ name: nameFromEType(row.eType), bNoTruncate: true });
-		if (row.comment.length > g_cchTruncateDefault)
-			rgRet.title = row.comment;
+		if (bShowRemain) {
+			var remainCalc = parseFixedFloat(row.est - row.spent);
+			if (bOrderR && remainCalc == 0)
+				return [];
+			rgRet.push({ name: remainCalc, bNoTruncate: true });
+		}
+		if (bShowComment)
+			rgRet.push({ name: row.comment, bNoTruncate: bNoTruncate });
+
+		if (bShowEtype)
+			rgRet.push({ name: nameFromEType(row.eType), bNoTruncate: true });
+
+		if (!bShowComment) {
+			var title="Last: ";
+			title +=  row.user;
+			title += " - " + row.nameBoard;
+			title += " - " + row.nameCard;
+			title += " - " + row.comment;
+
+			rgRet.title = title;
+		} else {
+			if (row.comment.length > g_cchTruncateDefault)
+				rgRet.title = row.comment;
+		}
 		return rgRet;
 	}
 

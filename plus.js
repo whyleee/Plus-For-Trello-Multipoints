@@ -315,7 +315,7 @@ function programUnZoom(userElem) {
 		g_idTimeoutReportHover = setTimeout(function () {
 			userElem.removeClass("agile_plus_header_link_zoomhoverActive");
 			g_idTimeoutReportHover = null;
-		}, 2000);
+		}, 8000);
 	} else {
 		//assert(false, "handlerOut should not have g_idTimeoutReportHover set."); //note: this can actually happen in rare cases involving switching windows while on the hover timeout wait
 	}
@@ -491,7 +491,7 @@ function doWeeklyReport(config, user, bUpdateErrorState) {
 				}
 			}
 
-			var dataWeek = { config: config, status: response2.status, table: ordered, drilldownData: drilldownData };
+			var dataWeek = { config: config, status: response2.status, table: ordered, drilldownData: drilldownData, sWeek:0 };
 			if (iCurrentUserOrder < 0)
 				dataWeek.weekSummary = "no data";
 			else {
@@ -513,6 +513,7 @@ function doWeeklyReport(config, user, bUpdateErrorState) {
 				}
 
 				dataWeek.weekSummary = parseFixedFloat(sumDays) + " " + strDays;
+				dataWeek.sWeek = sumDays;
 			}
 			if (sToday === null)
 				dataWeek.sToday = null;
@@ -709,7 +710,7 @@ function configureSsLinksWorkerPostOauth(resp, b, user, bUpdateErrorState) {
 		return;
 	}
 
-	processUserSENotifications(resp.sToday);
+	processUserSENotifications(resp.sToday, resp.weekSummary, resp.sWeek);
 	var nameSsLink = resp.weekSummary;
 	if (bUpdateErrorState)
 		setSyncErrorStatus(urlUserElem, resp.status);
@@ -761,10 +762,19 @@ function setupBurnDown() {
 }
 
 
-function processUserSENotifications(sToday) {
+function processUserSENotifications(sToday,weekSummary,sWeek) {
 	if (sToday === null)
 		return;
 	try {
+		var factor = 10;
+		if (sWeek > 100)
+			factor = 1;
+		else if (sWeek < 10)
+			factor = 100;
+		var sBadge = Math.round(sWeek * factor) / factor;
+		if (sBadge >= 1000)
+			sBadge = "+999";
+		sendExtensionMessage({ method: "setBadgeData", text: "" + sBadge, tooltip: "Plus for Trello - "+weekSummary });
 		var dtToday = new Date();
 		var key = "spentLastNotified";
 		var strToday = makeDateOnlyString(dtToday);

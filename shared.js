@@ -6,7 +6,7 @@ var PROP_TRELLOUSER = "plustrellouser";
 var PROP_SHOWBOARDMARKERS = "showboardmarkers";
 var TAG_RECURRING_CARD = "[R]";
 var COLUMNNAME_ETYPE = "E.type";
-
+var g_bPopupMode = false; //running as popup? (chrome browse action popup)
 
 function assert(condition, message) {
 	if (!condition) {
@@ -73,7 +73,7 @@ function sendExtensionMessage(obj, responseParam, bRethrow) {
 	try {
 		chrome.extension.sendRequest(obj, function (response) {
 			try {
-				setTimeout(function () { responseParam(response); }, 0); //this allows the response to be out of the extension messaging stack. exceptions wont break the channel.
+				setTimeout(function () { if (responseParam) responseParam(response); }, 0); //this allows the response to be out of the extension messaging stack. exceptions wont break the channel.
 			} catch (e) {
 				logException(e);
 			}
@@ -237,6 +237,8 @@ function getHtmlBurndownTooltipFromRows(bShowTotals, rows, bReverse, header, cal
 		}
 
 		var tds = callbackGetRowData(row);
+		if (tds.length == 0)
+			return "";
 		var strPost = "";
 		if (tds.title && tds.title != "")
 			strPost = " title='" + tds.title + "'";
@@ -259,8 +261,15 @@ function getHtmlBurndownTooltipFromRows(bShowTotals, rows, bReverse, header, cal
 	html += '<table class="agile_tooltipTable">';
 	html += '<tr class="agile-drilldown-header">';
 	var iHeader = 0;
-	for (; iHeader < header.length; iHeader++)
-		html += th(header[iHeader].name, header[iHeader].bExtend);
+	var bExtended = false;
+	for (; iHeader < header.length; iHeader++) {
+		var bExtendCur = header[iHeader].bExtend;
+		if (bExtendCur)
+			bExtended = true;
+		if (!bExtended && iHeader == (header.length - 1))
+			bExtendCur = true;
+		html += th(header[iHeader].name, bExtendCur);
+	}
 	html += '</tr>';
 	var sTotal = 0;
 	var eTotal = 0;
@@ -293,11 +302,17 @@ function getHtmlBurndownTooltipFromRows(bShowTotals, rows, bReverse, header, cal
 }
 
 function setScrollerHeight(scroller, elemTop, dyTop) {
-	var position = elemTop.offset(); 
-	var height = $(window).height() - position.top - dyTop;
+	var position = elemTop.offset();
+	
+	var height = 0;
+
+	if (g_bPopupMode)
+		height = window.innerHeight - position.top;
+	else
+		height = window.innerHeight - 10 - position.top - dyTop; //review zig: redo scroller stuff
 	if (height < 100) //minimum size
 		height = 100;
-	scroller.css("height", height);
+	scroller.css("max-height", height);
 }
 
 function makeReportContainer(html, widthWindow, bOnlyTable, elemParent) {
@@ -542,9 +557,28 @@ if (typeof jQuery !== 'undefined') {
 	})(jQuery);
 }
 
+function setPopupClickHandler(elem, url) {
+	elem.click(function () {
+		chrome.tabs.create({ url: url });
+		return false;
+	});
+	elem.keypress(function (event) {
+		var keycode = (event.keyCode ? event.keyCode : event.which);
+		if (keycode == '13') {
+			chrome.tabs.create({ url: url });
+			return false;
+		}
+	});
+}
 
-function buildUrlFromParams(doc, params) {
+function buildUrlFromParams(doc, params, bNoPopupMode) {
 	var url = chrome.extension.getURL(doc);
+
+	if (bNoPopupMode)
+		params["popup"] = 0;
+	else if (params["popup"] === undefined && g_bPopupMode)
+		params["popup"] = "1";
+
 	var c = 0;
 	for (var i in params) {
 		var val = params[i];

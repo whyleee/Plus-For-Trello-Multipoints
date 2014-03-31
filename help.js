@@ -157,7 +157,7 @@ var Help = {
 		helpWin.para('I am committed to keeping this extension free, but I need your help!', divDonations);
 		helpWin.para('You can help by donating, contributing your skills for better manuals, graphic design or coding.', divDonations);
 		helpWin.para('Your donation allows me to maintain and keep improving Plus. I have a lot of pending features to implement!', divDonations);
-		helpWin.para('Donations so far from all users: $93.00 total. Plus has spent over 700 hours so far to develop this software.', divDonations);
+		helpWin.para('Donations so far from all users: $198.00 total. The Plus Team has spent over 700 hours so far to develop this software.', divDonations);
 		helpWin.para('<b>Donate securely through Paypal, which doesnt send me your credit card.</b>', divDonations);
 		helpWin.para('<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">\
 <input type="hidden" name="cmd" value="_s-xclick">\
@@ -238,6 +238,7 @@ var Help = {
 				helpWin.para('&diams; later 12 was spent in Russia, balance (15/90)');
 				helpWin.para('&diams; finally 16 was added to the estimate, leaving it at (15/106) as can be seen on the final card title.');
 				helpWin.para('&diams; this means that the card still has 91 units remaining');
+				helpWin.para('&diams; <b>When you are done with a card and there is still a Remaining</b>, make sure to reduce its Estimate to match Spent so Plus knows its done.');
 				helpWin.para('&nbsp');
 				helpWin.para('<b><h2 id="agile_help_rules">Rules</h2></b>');
 				helpWin.para('&diams; Comments after the S/E part are optional.');
@@ -280,11 +281,11 @@ var Help = {
 				helpWin.para('&diams; Cards will hide only if you <A target="_blank" href="http://help.trello.com/customer/portal/articles/1256112-enabling-power-ups"> enable the Card Aging power-up</A> on each board.');
 				helpWin.para('&nbsp');
 
-				helpWin.para('<b><h2 id="agile_help_renamingmoving">Renaming cards or boards, moving cards, archiving, deleting</h2></b>');
+				helpWin.para('<b><h2 id="agile_help_renamingmoving">Renaming boards or cards, moving, archiving, deleting</h2></b>');
 				helpWin.para("&diams; You can rename boards and cards in Trello. Next time you report S/E on the board/card, Plus will rename them too.");
 				helpWin.para("&diams; To force Plus to rename inmediately simply report an S/E of 0/0 on the card after renaming. If you renamed a board use any card in the board.");
 				helpWin.para("&diams; Moving a card to another board is handled automatically by Plus, however if you moved the card outside of Plus you need to also report S/E of 0/0 after moving the card. All card history will move to the new board.");
-				helpWin.para("&diams; Archiving or deleting cards currently has no effect on Plus, the are still showed in reports.");
+				helpWin.para("&diams; Archiving or deleting cards currently has no effect on Plus, those will still show in reports.");
 				helpWin.para("&diams; If you made a mistake on a card and want to void all its S/E, you need to have all team members that modified that card's S/E to report a negative S/E.");
 				helpWin.para('&diams; Renaming a Trello user does NOT rename her in Plus, she will appear as a new user.');
 				helpWin.para('&nbsp');
@@ -309,24 +310,23 @@ var Help = {
 				helpWin.para('&diams; Once you build a report you can bookmark/email its URL to team members.');
 				helpWin.para('&diams; Use "Copy" <IMG border="none" align="top" src="' + chrome.extension.getURL("images/copy.png") + '"></IMG> to export to the clipboard and paste on an email or spreadsheet.');
 				helpWin.para('&diams; Drill-down on any chart bar or pivot cell to get a detailed report.');
+				helpWin.para('&diams; No internet? no problem! Reports and dashboards work offline. Access them from the Plus icon in Chrome.');
 				helpWin.para('&diams; The <b>E.type</b> column tells you if the row Estimate is new, increases or decreases an existing estimate by that user on that card.');
 				helpWin.para('&diams; A blank E.type means the estimate was not affected.');
 				helpWin.para('&nbsp');
 
 				helpWin.para('<b><h2 id="agile_help_spendoldS">How to spend old estimates?</h2></b>');
 				helpWin.para('If you used Plus before 2014 or came from trello3000/Scrum for Trello you may already have S/E in card titles.');
-				helpWin.para('However those S/E you entered back then are not in the new historical database.');
-				helpWin.para('If you try to spend a card with an old Estimate it will go into a negative Remain.');
-				helpWin.para('To fix that you need to:');
-				helpWin.para('&diams; 1. rename the card title manually by clicking its title and setting its Estimate to zero.');
-				helpWin.para('&diams; 2. then use the card S/E bar to add that estimate in the past (-10d for example).');
-				helpWin.para('Similarly for old Spent already entered cards may appear in the Pending Cards section showing a Remain,');
-				helpWin.para('even though you had already spent it before version 2.2 was available.');
-				helpWin.para('To fix that you also need to manually reduce that Spent from the card title and Spend it again using the S/E bar.');
+				helpWin.para('However those S/E you entered back then are not in the new historical database so Plus doesnt know to which user(s) those belong.');
+				helpWin.para('If you try to spend a card with an old Estimate it will go into a negative Remain. To fix that you need to:');
+				helpWin.para('&diams; 1. Rename the card title manually by clicking its title and setting its Estimate to zero.');
+				helpWin.para('&diams; 2. Use the card S/E bar to add that estimate in the past (-10d for example).');
+				helpWin.para('Similarly for old Spent already entered cards may appear in the Pending Cards section showing a Remain.');
+				helpWin.para('To fix that you also need to manually reduce that Spent by renaming the card title, then Spend it using the card S/E bar.');
 				helpWin.para('&nbsp');
 
 				if (bSpentBackendCase) {
-					helpWin.para('<b><h2 id="agile_help_spentbackend">For "Spent backend" users only:</h2></b>');
+					helpWin.para('<b><h2 id="agile_help_spentbackend">For "Spent backend" users</h2></b>');
 					helpWin.para('&diams; Add the @specialUser to the boards you want to report to Spent (write access, not observer.) Otherwise the comment reports will be ignored.');
 					helpWin.para('&diams; To report S/E on a day before today, use this syntax: @specialUser -3d 2/0 comment. this tells it to report it 3 days ago.');
 					helpWin.para('&diams; An admin can report as another user using the following format:');
@@ -371,8 +371,8 @@ Accept and use Scrum for Trello format <i>(E) card title [S]</i>. <b>All team me
 				}
 				helpWin.para('&nbsp');
 
-				helpWin.para('<b><h2 id="agile_help_security">Security notes</h2></b>');
-				helpWin.para('Plus makes sure to secure all your Plus data and Google permissions. Read <A target="_blank" href="http://spentfortrello.blogspot.com/2014/02/plus-for-trello-security-notes.html">here</A> for more details.');
+				helpWin.para('<b><h2 id="agile_help_security">Privacy policy and Security notes</h2></b>');
+				helpWin.para('Plus makes sure to secure all your Plus data. <A target="_blank" href="http://spentfortrello.blogspot.com/2014/02/plus-for-trello-security-notes.html">Read here</A> for more details.');
 				helpWin.para('&nbsp');
 
 				helpWin.para('<b><h2 id="agile_help_storage">Storage used</h2></b>');

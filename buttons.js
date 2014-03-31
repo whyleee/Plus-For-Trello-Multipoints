@@ -1,4 +1,4 @@
-var CopyToClipboardButton = {
+﻿var CopyToClipboardButton = {
 	create: function (text) {
 		var b = $("<a href=\"#\">" + Language.copy_to_clipboard + "</a>").addClass('button-link agile_close_button');
 		b.click(function () {
@@ -85,12 +85,28 @@ function insertPlusFeed(bForce) {
 			if (data !== undefined)
 				stateFeed = data;
 			var msNow = (new Date()).getTime();
-			if (msNow - stateFeed.msLastQuery > 1000 * 60 * 60 * 2) { //2 hours
+			var msWait = 1000 * 60 * 60 * 3.5; //3.5 hours (there is a quota of 10,000 queries/day for all users)
+			//msWait = 1000; //1 sec, for test
+			if (msNow - stateFeed.msLastQuery > msWait) {
 				setTimeout(function () { //delay a few seconds because usually happens on trello page load, wait until that settles
 					sendExtensionMessage({ method: "getPlusFeed", msLastPostRetrieved: stateFeed.msLastPostReadByUser },
 					function (response) {
+						if (response.status != "OK") {
+							insertPlusFeedWorker(stateFeed, key); //use previous result
+							return;
+						}
 						stateFeed.msLastPostRetrieved = response.msLastPostRetrieved;
 						stateFeed.msLastQuery = msNow;
+						var iitem = 0;
+						var itemsSave = [];
+						var iMax = Math.min(2, response.items.length); //prevent huge sync item
+						for (; iitem < iMax; iitem++) {
+							var item = response.items[iitem];
+							itemsSave.push({ d: item.msDatePublish, t:item.title });
+						}
+						if (JSON.stringify(itemsSave).length > 500) //prevent huge sync item. should never happen since each item is small and we allow 2 only
+							itemsSave = [];
+						stateFeed.items = itemsSave;
 						var objSave = {};
 						objSave[key] = stateFeed;
 						if (true) {
@@ -125,10 +141,16 @@ function insertPlusFeedWorker(stateFeed, key) {
 	var bShowNewIcon= false;
 	var bShowRecentIcon = false;
 	var pathImgRecent = "images/newgray.png";
-	var strTipRecent = "Recently viewed Plus features";
+	var msNow = (new Date()).getTime();
+	var dmsOldestShow = 1000 * 60 * 60 * 24 * 10; //10 days
+	var titleTipBase = "New Plus features!";
 
-	if (stateFeed.msLastPostReadByUser < stateFeed.msLastPostRetrieved)
-		bShowNewIcon = true;
+	if (stateFeed.msLastPostReadByUser < stateFeed.msLastPostRetrieved) {
+		if (msNow - stateFeed.msLastPostRetrieved < dmsOldestShow)
+			bShowNewIcon = true;
+		else
+			bShowRecentIcon = true;
+	}
 	else {
 		var now = (new Date()).getTime();
 		if (stateFeed.msUserClicked > 0 && now - stateFeed.msUserClicked < 1000 * 60 * 60) //show read icon for 1 hour since last clicked
@@ -155,19 +177,27 @@ function insertPlusFeedWorker(stateFeed, key) {
 						|| stateOrig.msLastPostReadByUser != stateFeed.msLastPostReadByUser
 						|| (stateFeed.msUserClicked - stateOrig.msUserClicked > 1000 * 60 * 5)) { //protect sync quota for 5min if only msUserClicked changed
 						var objSave = {};
-						objSave[key] = stateFeed;
+						stateFeed.items = [];
+						objSave[key] = stateFeed;					
 						chrome.storage.sync.set(objSave, function () { });
 					}
 				});
 				icon.attr("src", chrome.extension.getURL(pathImgRecent));
-				icon.attr("title", strTipRecent);
+				icon.attr("title", titleTipBase);
 				window.open('https://plus.google.com/109669748550259696558/posts', '_blank');
 			});
 		} else {
 			spanIcon = icon.parent();
 		}
 		icon.attr("src", chrome.extension.getURL(bShowNewIcon ? "images/new.png" : pathImgRecent));
-		icon.attr("title", bShowNewIcon?"New Plus features!": strTipRecent);
+		var iitem = 0;
+		var titleTip = titleTipBase;
+		for (; stateFeed.items && iitem < stateFeed.items.length; iitem++) {
+			var item = stateFeed.items[iitem];
+				var datePub = new Date(item.d);
+				titleTip += ("\n\n• " + datePub.toLocaleDateString() + ": " + item.t);
+		}
+		icon.attr("title", titleTip);
 		spanIcon.fadeIn(600);
 	} else {
 		if (icon.length > 0) {

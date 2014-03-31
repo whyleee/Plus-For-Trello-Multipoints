@@ -117,6 +117,11 @@ chrome.extension.onRequest.addListener(function (request, sender, sendResponsePa
 	else if (request.method == "checkLoggedIntoChrome") {
 		handleCheckLoggedIntoChrome(sendResponse);
 	}
+	else if (request.method == "setBadgeData") {
+		chrome.browserAction.setBadgeText({ text: request.text });
+		chrome.browserAction.setTitle({ title: request.tooltip });
+		sendResponse({});
+	}
 	else if (request.method == "testBackgroundPage") {
 		insertLogMessages(request.logMessages, request.bDoWriteLog, request.tuser, sendResponse);
 	}
@@ -331,6 +336,7 @@ function handleGetPlusFeed(msLastPostRetrieved, sendResponse) {
 				var msDate = Date.parse(item.published);
 				if (msDate <= msLastPostRetrieved || item.verb != "post")
 					continue;
+				item.msDatePublish = msDate; //save caller from having to parse it
 				itemsRet.push(item);
 				if (msDate > msDateMax)
 					msDateMax = msDate;

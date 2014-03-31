@@ -6,7 +6,6 @@ var g_chart = null;
 var g_data = null;
 var g_chartUser = null;
 var g_dataUser = null;
-var g_boardName = "";
 var g_userTrello = null;
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -41,19 +40,19 @@ function configBoardBurndownData(idBoard) {
 					showError(response.status);
 					return;
 				}
-				var sql = "select H.user, H.spent, H.est, H.date, H.comment, H.eType, H.idCard, C.name FROM HISTORY as H JOIN CARDS as C on H.idCard=C.idCard WHERE c.idBoard=? order by H.date ASC";
-				var values = [idBoard];
-				getSQLReport(sql, values,
-					function (response) {
-						var rows = response.rows;
-						try {
-							setChartData(rows, idBoard);
-						}
-						catch (e) {
-							var strError = "Error: " + e.message;
-							showError(strError);
-						}
-					});
+					var sql = "select H.user, H.spent, H.est, H.date, H.comment, H.eType, H.idCard, C.name FROM HISTORY as H JOIN CARDS as C on H.idCard=C.idCard WHERE c.idBoard=? order by H.date ASC";
+					var values = [idBoard];
+					getSQLReport(sql, values,
+						function (response) {
+							var rows = response.rows;
+							try {
+								setChartData(rows, idBoard);
+							}
+							catch (e) {
+								var strError = "Error: " + e.message;
+								showError(strError);
+							}
+						});
 			});
 }
 
@@ -76,20 +75,20 @@ function createCloseTooptipMonitor(callback) {
 function loadBurndown() {
 	createCloseTooptipMonitor(drawChart);
 	var params = getUrlParams();
-	var idBoard = decodeURIComponent(params["idBoard"]);
-	var boardName = decodeURIComponent(params["board"]);
-	document.title = (boardName + " - Plus Dashboard");
+		var idBoard = decodeURIComponent(params["idBoard"]);
+		var boardName = decodeURIComponent(params["board"]);
+			document.title = (boardName + " - Plus Dashboard");
 	$("#topTitle").text(document.title);
 	g_boardName = boardName;
 	$("#reportLink").attr("href", chrome.extension.getURL("report.html?idBoard=") + encodeURIComponent(idBoard)+"&weekStartRecent=true");
-	var header = $("#headerMarker");
-	var container = $("#boardMarkersContainer");
-	header.click(function () {
-		handleSectionSlide(container, $("#boardMarkersContent"));
-	});
-	chrome.storage.local.get([PROP_TRELLOUSER, PROP_SHOWBOARDMARKERS], function (obj) {
-		g_userTrello = obj[PROP_TRELLOUSER];
-		configBoardBurndownData(idBoard);
+			var header = $("#headerMarker");
+			var container = $("#boardMarkersContainer");
+			header.click(function () {
+				handleSectionSlide(container, $("#boardMarkersContent"));
+			});
+		chrome.storage.local.get([PROP_TRELLOUSER, PROP_SHOWBOARDMARKERS], function (obj) {
+			g_userTrello = (obj[PROP_TRELLOUSER] || null);
+			configBoardBurndownData(idBoard);
 		g_bShowBoardMarkers = (obj[PROP_SHOWBOARDMARKERS] || false);
 	});
 }

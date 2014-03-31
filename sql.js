@@ -44,25 +44,28 @@ function handleIsSyncing(sendResponse) {
 }
 
 function handleGetTotalRows(bOnlyNotSync, sendResponse) {
-	var sql = "select count(*) as total FROM HISTORY";
+	var sql = null;
 	if (bOnlyNotSync)
-		sql += " WHERE bSynced=0";
+		sql = "select count(*) as total FROM HISTORY WHERE bSynced=0";
+	else
+		sql = "select max(rowid) as total FROM HISTORY"; //rowid autoincrements and we never delete rows. faster than count(*)
 	var request = { sql: sql, values: [] };
 	handleGetReport(request,
 		function (response) {
-			var thisResponse = { status: response.status };
+			var thisResponse = { status: response.status, cRowsTotal:0 };
 			if (response.status != "OK") {
 				sendResponse(thisResponse);
 				return;
 			}
-			var cRowsTotal = response.rows[0].total;
-			thisResponse.cRowsTotal = cRowsTotal;
+
+			if (response.rows)
+				thisResponse.cRowsTotal= (response.rows[0].total || 0);
 			sendResponse(thisResponse);
-		});
+		})	;
 }
 
 function handleGetTotalMessages(sendResponse) {
-	var request = { sql: "select count(*) as total FROM LOGMESSAGES", values: [] };
+	var request = { sql: "select count(*) as total FROM LOGMESSAGES", values: [] }; //review zig: use max(rowid), handle empty case
 	handleGetReport(request,
 		function (response) {
 			var thisResponse = { status: response.status };

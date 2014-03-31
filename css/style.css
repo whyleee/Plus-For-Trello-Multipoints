@@ -182,7 +182,7 @@ div#spent_serviceUrlConfig_container {
 	overflow: auto !important;
 	display: block;
 	width: 100%;
-	height: 208px;
+	max-height: 208px;
 }
 
 .agile_scroller {
@@ -545,6 +545,68 @@ table#tableMarkers td {
 		font-size: 12px !important;
 	}
 
+#agile_divSearch_container {
+    width:100%;
+    padding-left:6px;
+    padding-top:3px;
+}
+
+#agile_boardSearch {
+    padding:2px;
+    width:230px;
+    border-radius: 3px;
+    border: 1px solid #318ec4;
+}
+
+.agile_board_dashboardItem_name {
+    font-weight: bold;
+    font-size:14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    margin-bottom: 3px;
+}
+
+
+.agile_board_dashboardItem {
+    margin:5px;
+    height:30px;
+    border: none;
+    background-color: #E6EFF4 !important;
+    border-radius: 5px;
+    cursor: pointer;
+    padding:8px;
+    padding-top:5px;
+    vertical-align:middle;
+}
+
+.agile_board_dashboardItem:hover {
+    background-color: #CFE0EA !important;
+}
+
+.agile_board_dashboardItem:focus {
+    background-color: #CFE0EA !important;
+}
+
+.agile_board_dashboardItem img {
+    opacity: 0.07;
+}
+
+.agile_board_dashboardItem img:hover{
+    opacity: 0.7;
+}
+
+.agile_img_popup {
+    float:right;
+    margin-left:3px;
+    margin-right:3px;
+    margin-top:-3px;
+}
+
+.agile_link_noUnderline {
+     text-decoration: none !important;
+}
+
 .agile_all_button {
 	float: left;
 	width: 35px;
@@ -764,6 +826,10 @@ table#tableMarkers td {
 	//margin-bottom: 30px;
 }
 
+.agile_report_filter_label {
+    margin-top: 6px !important;
+}
+
 .agile_report_container {
 	margin-bottom: 30px;
 }
@@ -775,10 +841,12 @@ table#tableMarkers td {
 
 .agile_report_filter {
 	margin-right: 15px;
+    margin-bottom: 0px !important;
+    margin-top: 0px !important;
 	display: inline-block;
 }
 
-	.agile_report_filter p {
+.agile_report_filter p {
 		margin: 0px;
 		margin-top: 10px;
 	}

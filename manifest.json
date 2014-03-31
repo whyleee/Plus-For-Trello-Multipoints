@@ -2,8 +2,16 @@
    "background": {
       "page": "background.html"
    },
+   "browser_action": {
+      "default_icon": {
+         "19": "images/icon19.png",
+         "38": "images/icon38.png"
+      },
+      "default_popup": "popup.html",
+      "default_title": "Plus for Trello"
+   },
    "content_scripts": [ {
-      "css": [ "css/style.css", "css/colors.css" ],
+      "css": [ "css/style.css", "css/colors.css", "css/tooltip.css" ],
       "js": [ "libs/jquery.min.js", "libs/jsapi.js", "libs/formatchart.js", "app.js", "card.js", "labels.js", "language.js", "help.js", "buttons.js", "plus.js", "plusconfig.js", "board.js", "shared.js" ],
       "matches": [ "https://trello.com/*" ]
    } ],
@@ -21,9 +29,9 @@
       "client_id": "147493868263-rau69q6puvkskc83li1neonnbo0aelp9.apps.googleusercontent.com",
       "scopes": [ "https://spreadsheets.google.com/feeds", "https://docs.google.com/feeds" ]
    },
-   "permissions": [ "clipboardWrite", "identity", "storage", "unlimitedStorage", "notifications", "https://trello.com/", "https://spreadsheets.google.com/", "https://docs.google.com/", "https://script.google.com/", "https://script.googleusercontent.com/", "https://www.googleapis.com/" ],
+   "permissions": [ "clipboardWrite", "identity", "storage", "unlimitedStorage", "notifications", "https://trello.com/", "https://spreadsheets.google.com/", "https://docs.google.com/", "https://script.google.com/", "https://script.googleusercontent.com/", "https://www.googleapis.com/", "https://plusfortrello.appspot.com/" ],
    "short_name": "Plus for Trello",
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "2.6.5",
-   "web_accessible_resources": [ "images/s1.png", "images/s2.png", "images/s3.png", "images/s4.png", "images/chromenu.png", "images/icon16.png", "images/icon48.png", "images/recurring.png", "images/iconspent.png", "images/new.png", "images/newgray.png", "images/wait.gif", "images/close.png", "images/copy.png", "burndown.html", "dashboard.html", "report.html", "plusmessages.html", "manifest.json" ]
+   "version": "2.7.0",
+   "web_accessible_resources": [ "images/s1.png", "images/s2.png", "images/s3.png", "images/s4.png", "images/chart-sm.png", "images/report-sm.png", "images/chromenu.png", "images/icon16.png", "images/icon19.png", "images/icon38.png", "images/icon48.png", "images/recurring.png", "images/iconspent.png", "images/new.png", "images/newgray.png", "images/wait.gif", "images/close.png", "images/copy.png", "burndown.html", "dashboard.html", "popup.html", "report.html", "plusmessages.html", "manifest.json" ]
 }
